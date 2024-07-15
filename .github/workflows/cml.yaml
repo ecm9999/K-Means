@@ -1,30 +1,46 @@
-name: CI for ML
 
-on: [push]
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    
+version: 1
+stages:
+  - name: setup
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
+      - name: Set up environment
+        uses: docker://python:3.10
+        with:
+          image: python:3.10
+          pull-policy: if-not-present
+          args: ["-e"]
+        environment:
+          CML_VERSION: 1
+          PYTHON_VERSION: 3.10
+        command: bash -c "pip install -r requirements.txt"
 
-    - name: Set up Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: '3.8'
-    
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
+  - name: train
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+   
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'  # Reemplaza con la versión de Python que estés utilizando
 
-    - name: Run training
-      run: python train.py
-      
-    - name: Upload plot
-      uses: actions/upload-artifact@v2
-      with:
-        name: clusters-plot
-        path: clusters_plot.png
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+
+      - name: Execute Python script
+        run: |
+          python tu_script.py  # Reemplaza con el nombre de tu archivo de script Python
+
+      - name: Generate and upload plot
+        run: |
+          python generate_plot.py  # Si tienes un script separado para generar el gráfico
+        continue-on-error: true  # Si la generación del gráfico no afecta la ejecución del script principal
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: clustering_plots
+          path: clusters_plot.png  # Asegúrate de que coincida con el nombre del archivo guardado en tu script
+
